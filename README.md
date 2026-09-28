@@ -1,125 +1,158 @@
-# Elastic Email API Skill
+<div align="center">
 
-A comprehensive skill for integrating with the [Elastic Email](https://elasticemail.com) REST API v4. This skill teaches AI assistants how to send emails, manage contacts, orchestrate campaigns, configure domains, and leverage the full power of the Elastic Email platform — using direct API requests, official SDK libraries for 12+ languages, and the Elastic Email MCP server.
+<img src=".github/ee-logo.png" alt="Elastic Email" width="96" />
+
+# Elastic Email Agent Skills
+
+Official agent skills that teach Claude and other AI coding assistants to work with the [Elastic Email](https://elasticemail.com) REST API v4.
+
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-SKILL.md-D97757?logo=claude&logoColor=white)](https://agentskills.io)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-ready-D97757?logo=claude&logoColor=white)](https://docs.claude.com/en/docs/claude-code/skills)
+[![MCP](https://img.shields.io/badge/MCP-hosted%20server-111111?logo=modelcontextprotocol&logoColor=white)](https://help.elasticemail.com/en/articles/12595879-elastic-email-mcp)
+[![API](https://img.shields.io/badge/API-v4-0A7BBB)](https://elasticemail.com/developers/api-documentation/rest-api)
+[![SDKs](https://img.shields.io/badge/SDKs-12%20languages-0A7BBB)](#supported-languages)
+[![License: MIT](https://img.shields.io/github/license/ElasticEmail/elasticemail-skills?color=yellow)](LICENSE)
+
+[![Latest release](https://img.shields.io/github/v/release/ElasticEmail/elasticemail-skills?logo=github&label=release)](https://github.com/ElasticEmail/elasticemail-skills/releases)
+[![Last commit](https://img.shields.io/github/last-commit/ElasticEmail/elasticemail-skills?logo=github)](https://github.com/ElasticEmail/elasticemail-skills/commits/master)
+[![Open issues](https://img.shields.io/github/issues/ElasticEmail/elasticemail-skills?logo=github)](https://github.com/ElasticEmail/elasticemail-skills/issues)
+[![GitHub stars](https://img.shields.io/github/stars/ElasticEmail/elasticemail-skills?style=flat&logo=github)](https://github.com/ElasticEmail/elasticemail-skills/stargazers)
+
+[Installation](#installation) •
+[Quick start](#quick-start) •
+[Skills](#skills) •
+[Examples](#more-examples) •
+[Languages](#supported-languages) •
+[Contributing](#contributing)
+
+</div>
+
+---
+
+## Features
+
+- **Transactional and bulk email.** Your assistant knows the send endpoints, payload shape, merge fields and templates.
+- **Contacts, lists and segments.** Add, update, import, export and delete contacts, and build lists and segments.
+- **Campaigns and templates.** Create, update, pause and monitor campaigns and manage templates.
+- **Domains and deliverability.** Walk through domain verification, SPF/DKIM setup, suppressions and email verification.
+- **Official SDKs.** Setup and examples for all 12 Elastic Email client libraries, from Python and C# to Rust and Bash.
+- **MCP server.** Connect the hosted Elastic Email MCP server and use its tools for AI-driven email workflows.
+- **Guardrails built in.** API limits, access levels, error codes and troubleshooting, so generated code handles failures.
+
+## Requirements
+
+| Requirement | Details |
+| --- | --- |
+| AI assistant | Any client that supports [Agent Skills](https://agentskills.io) (`SKILL.md`): Claude Code, Claude.ai, Claude Desktop and others |
+| Elastic Email account | [Email API or Email Marketing](https://elasticemail.com/select-product), free tier available |
+| API key | Create one in [Settings → Manage API Keys](https://app.elasticemail.com/marketing/settings/new/manage-api) |
 
 ## Installation
 
-### Using npx skills CLI
+Install with the [`skills`](https://www.npmjs.com/package/skills) CLI:
 
-```sh
-# List available skills
-npx skills add ElasticEmail/skills --list
+```bash
+# List the skills in this repository
+npx skills add ElasticEmail/elasticemail-skills --list
 
-# Install the skill globally
-npx skills add ElasticEmail/skills --skill elastic-email-api --global
+# Install the Elastic Email API skill globally
+npx skills add ElasticEmail/elasticemail-skills --skill elastic-email-api --global
 ```
 
-### Using Context7 skills CLI
+<details>
+<summary><b>Other ways to install</b></summary>
 
-```sh
-# Interactively browse and install
-npx ctx7 skills install /ElasticEmail/skills
+**Context7 CLI**
 
-# Install directly
-npx ctx7 skills install /ElasticEmail/skills elastic-email-api
+```bash
+# Browse and install interactively
+npx ctx7 skills install /ElasticEmail/elasticemail-skills
+
+# Install the skill directly
+npx ctx7 skills install /ElasticEmail/elasticemail-skills elastic-email-api
 ```
 
-### Manual Installation
+**Claude Code (manual)**
 
-1. Clone this repository:
-   ```sh
-   git clone https://github.com/ElasticEmail/skills.git
-   ```
-2. Copy the `skills/elastic-email-api` folder to your skills directory
-3. For Claude.ai: Upload via **Settings > Capabilities > Skills**
-4. For Claude Code: Place in your skills directory
-
-## Skills in this repo
-
-### elastic-email-api
-
-Complete skill for working with the Elastic Email REST API v4. Covers:
-
-- **Direct HTTP requests** to all API endpoints (Emails, Contacts, Campaigns, Lists, Templates, Domains, Segments, Suppressions, Verifications, Events, Statistics, Files, Inbound Routing, Security, SubAccounts)
-- **Official SDK libraries** for Python, C#, Java, PHP, JavaScript, TypeScript (Angular & Axios), Go, Ruby, Rust, Perl, and Bash
-- **MCP server integration** for AI-powered email workflows
-- **Authentication** patterns for API keys, SMTP, and MCP
-- **Code examples** for every major operation in multiple languages
-- **Best practices** for email deliverability, rate limiting, and error handling
-
-## What's Included
-
-```
-elasticemail-skills/
-├── README.md                                    # This file
-├── LICENSE                                      # MIT License
-└── skills/
-    └── elastic-email-api/
-        ├── SKILL.md                             # Main skill file (required)
-        └── references/
-            ├── rest-api-endpoints.md            # Complete API endpoint reference
-            ├── sdk-libraries.md                 # SDK setup & examples for all languages
-            ├── mcp-tools.md                     # MCP server tool reference
-            ├── authentication.md                # Auth guide (API keys, SMTP, MCP)
-            └── code-examples.md                 # Copy-paste code examples
+```bash
+git clone https://github.com/ElasticEmail/elasticemail-skills.git
+cp -r elasticemail-skills/skills/elastic-email-api ~/.claude/skills/
 ```
 
-## Prerequisites
+Use `.claude/skills/` inside a project instead of `~/.claude/skills/` to share the skill with your team through the repository.
 
-To use the Elastic Email API, you need:
+**Claude.ai and Claude Desktop**
 
-1. An [Elastic Email account](https://elasticemail.com/select-product) Email Marketing or Email API (free tier available)
-2. An API key (generate at [Settings > Manage API Keys](https://app.elasticemail.com/marketing/settings/new/manage-api))
+Zip the `skills/elastic-email-api` folder and upload it in **Settings → Capabilities → Skills**.
 
-## Quick Start
+</details>
 
-### Send an email with cURL
+## Quick start
+
+Once the skill is installed, ask your assistant in plain language. It loads the skill automatically when a request mentions Elastic Email:
+
+```text
+Send a welcome email with Elastic Email from my Express signup handler.
+Import contacts.csv into a new Elastic Email list called "Beta users".
+Use the Elastic Email Python SDK to send the "order-shipped" template with merge fields.
+Why am I getting 403 from the Elastic Email API when I create a campaign?
+```
+
+> [!TIP]
+> Keep your API key out of source code and prompts. Store it in an environment variable such as `ELASTICEMAIL_API_KEY`, and generated code will read it from there.
+
+### What the skill produces
+
+A request like "send a transactional email with cURL" produces a call like this:
 
 ```bash
 curl -X POST "https://api.elasticemail.com/v4/emails/transactional" \
-  -H "x-elasticemail-apikey: YOUR_API_KEY" \
+  -H "X-ElasticEmail-ApiKey: $ELASTICEMAIL_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "Recipients": { "To": ["recipient@example.com"] },
+    "Recipients": { "To": ["john.doe@example.com"] },
     "Content": {
-      "From": "sender@yourdomain.com",
-      "Subject": "Hello!",
+      "From": "My App <no-reply@yourdomain.com>",
+      "Subject": "Welcome aboard!",
       "Body": [{ "ContentType": "HTML", "Content": "<h1>Hello!</h1>" }]
     }
   }'
 ```
 
-### Send an email with Python SDK
+The same request in Python with the [official SDK](https://github.com/ElasticEmail/elasticemail-python):
 
 ```python
+import os
+
 import ElasticEmail
-from ElasticEmail.api import emails_api
-from ElasticEmail.model.email_transactional_message_data import EmailTransactionalMessageData
-from ElasticEmail.model.transactional_recipient import TransactionalRecipient
-from ElasticEmail.model.email_content import EmailContent
-from ElasticEmail.model.body_part import BodyPart
-from ElasticEmail.model.body_content_type import BodyContentType
+from ElasticEmail.models import (
+    BodyContentType,
+    BodyPart,
+    EmailContent,
+    EmailTransactionalMessageData,
+    TransactionalRecipient,
+)
 
 configuration = ElasticEmail.Configuration()
-configuration.api_key['apikey'] = 'YOUR_API_KEY'
+configuration.api_key["apikey"] = os.environ["ELASTICEMAIL_API_KEY"]
+
+message = EmailTransactionalMessageData(
+    recipients=TransactionalRecipient(to=["john.doe@example.com"]),
+    content=EmailContent(
+        var_from="My App <no-reply@yourdomain.com>",
+        subject="Welcome aboard!",
+        body=[BodyPart(content_type=BodyContentType.HTML, content="<h1>Hello!</h1>")],
+    ),
+)
 
 with ElasticEmail.ApiClient(configuration) as api_client:
-    api_instance = emails_api.EmailsApi(api_client)
-    email_data = EmailTransactionalMessageData(
-        recipients=TransactionalRecipient(to=["recipient@example.com"]),
-        content=EmailContent(
-            _from="sender@yourdomain.com",
-            subject="Hello!",
-            body=[BodyPart(content_type=BodyContentType("HTML"), content="<h1>Hello!</h1>")],
-        ),
-    )
-    response = api_instance.emails_transactional_post(email_data)
-    print(response)
+    result = ElasticEmail.EmailsApi(api_client).emails_transactional_post(message)
+    print(result.transaction_id)
 ```
 
-### Use with MCP (VS Code / Cursor / any MCP-compatible client)
+### Connect the MCP server
 
-The official Elastic Email MCP server is available as a hosted service — no local installation required. Add to your MCP configuration:
+The skill also covers the hosted [Elastic Email MCP server](https://help.elasticemail.com/en/articles/12595879-elastic-email-mcp). Add it to any MCP client (VS Code, Cursor, Claude Code and others):
 
 ```json
 {
@@ -134,35 +167,114 @@ The official Elastic Email MCP server is available as a hosted service — no lo
 }
 ```
 
-A self-hosted .NET MCP server is also available: https://github.com/ElasticEmail/elasticemail-mcp-server
+Prefer to run it yourself? Use the [self-hosted .NET MCP server](https://github.com/ElasticEmail/elasticemail-mcp-server).
 
-## Supported Languages & Frameworks
+## Skills
 
-| Language | Package | GitHub |
-|---|---|---|
-| Python | `ElasticEmail` | [elasticemail-python](https://github.com/ElasticEmail/elasticemail-python) |
-| C# | `ElasticEmail` (NuGet) | [elasticemail-csharp](https://github.com/ElasticEmail/elasticemail-csharp) |
-| Java | `elasticemail-java` | [elasticemail-java](https://github.com/ElasticEmail/elasticemail-java) |
-| PHP | `elasticemail/elasticemail-php` | [elasticemail-php](https://github.com/ElasticEmail/elasticemail-php) |
-| JavaScript | `@elasticemail/elasticemail-client` | [elasticemail-js](https://github.com/ElasticEmail/elasticemail-js) |
-| TypeScript Angular | `@elasticemail/elasticemail-client` | [elasticemail-ts-angular](https://github.com/ElasticEmail/elasticemail-ts-angular) |
-| TypeScript Axios | `@elasticemail/elasticemail-client` | [elasticemail-ts-axios](https://github.com/ElasticEmail/elasticemail-ts-axios) |
-| Go | `elasticemail-go` | [elasticemail-go](https://github.com/ElasticEmail/elasticemail-go) |
-| Ruby | `ElasticEmail` | [elasticemail-ruby](https://github.com/ElasticEmail/elasticemail-ruby) |
-| Rust | `elasticemail` | [elasticemail-rust](https://github.com/ElasticEmail/elasticemail-rust) |
-| Perl | `ElasticEmail::Client` | [elasticemail-perl](https://github.com/ElasticEmail/elasticemail-perl) |
-| Bash | Shell scripts | [elasticemail-bash](https://github.com/ElasticEmail/elasticemail-bash) |
+| Skill | What it covers |
+| --- | --- |
+| [`elastic-email-api`](skills/elastic-email-api/SKILL.md) | The full REST API v4 (15 endpoint groups), all 12 official SDKs, the MCP server, authentication, API limits, error handling and common workflows |
 
-## Resources
+The skill keeps `SKILL.md` short and loads detailed references only when needed:
 
-- [Elastic Email REST API Documentation](https://elasticemail.com/developers/api-documentation/rest-api)
-- [Elastic Email API Libraries](https://elasticemail.com/developers/api-libraries)
-- [Elastic Email MCP Documentation](https://help.elasticemail.com/en/articles/12595879-elastic-email-mcp)
-- [Elastic Email MCP Server (.NET, self-hosted)](https://github.com/ElasticEmail/elasticemail-mcp-server)
-- [OpenAPI Specification (Swagger)](https://api.elasticemail.com/public/v4/swagger)
-- [Elastic Email Help Center](https://help.elasticemail.com/en/)
-- [Elastic Email GitHub](https://github.com/ElasticEmail)
+| Reference | Contents |
+| --- | --- |
+| [`rest-api-endpoints.md`](skills/elastic-email-api/references/rest-api-endpoints.md) | Every endpoint with parameters, request and response schemas, and required access levels |
+| [`sdk-libraries.md`](skills/elastic-email-api/references/sdk-libraries.md) | Install, configuration and examples for each SDK |
+| [`code-examples.md`](skills/elastic-email-api/references/code-examples.md) | Copy-paste examples for common operations in several languages |
+| [`authentication.md`](skills/elastic-email-api/references/authentication.md) | API keys, access levels, SMTP credentials and MCP auth |
+| [`mcp-tools.md`](skills/elastic-email-api/references/mcp-tools.md) | The Elastic Email MCP server's tools |
+
+<details>
+<summary><b>Repository layout</b></summary>
+
+```text
+elasticemail-skills/
+└── skills/
+    └── elastic-email-api/
+        ├── SKILL.md                    # Skill entry point: overview, quick starts, workflows
+        └── references/
+            ├── rest-api-endpoints.md   # Complete API endpoint reference
+            ├── sdk-libraries.md        # SDK setup and examples for all languages
+            ├── code-examples.md        # Copy-paste code examples
+            ├── authentication.md       # API keys, SMTP and MCP auth
+            └── mcp-tools.md            # MCP server tool reference
+```
+
+</details>
+
+## More examples
+
+Runnable projects live in the [Elastic Email examples repository](https://github.com/ElasticEmail/elasticemail-examples), including [AI agent examples](https://github.com/ElasticEmail/elasticemail-examples/tree/main/ai-agents-elasticemail-examples) for LangChain, the OpenAI Agents SDK and the Vercel AI SDK.
+
+## Supported languages
+
+The skill knows the setup and conventions of every official Elastic Email SDK:
+
+| Language | Package | Repository |
+| --- | --- | --- |
+| Python | `ElasticEmail` (PyPI) | [elasticemail-python](https://github.com/ElasticEmail/elasticemail-python) |
+| C# / .NET | `ElasticEmail` (NuGet) | [elasticemail-csharp](https://github.com/ElasticEmail/elasticemail-csharp) |
+| Java | `com.github.ElasticEmail:elasticemail-java` (JitPack) | [elasticemail-java](https://github.com/ElasticEmail/elasticemail-java) |
+| PHP | `elasticemail/elasticemail-php` (Packagist) | [elasticemail-php](https://github.com/ElasticEmail/elasticemail-php) |
+| JavaScript | `@elasticemail/elasticemail-client` (npm) | [elasticemail-js](https://github.com/ElasticEmail/elasticemail-js) |
+| TypeScript (Angular) | `@elasticemail/elasticemail-client-ts-angular` (npm) | [elasticemail-ts-angular](https://github.com/ElasticEmail/elasticemail-ts-angular) |
+| TypeScript (Axios) | `@elasticemail/elasticemail-client-ts-axios` (npm) | [elasticemail-ts-axios](https://github.com/ElasticEmail/elasticemail-ts-axios) |
+| Go | `github.com/elasticemail/elasticemail-go/v4` | [elasticemail-go](https://github.com/ElasticEmail/elasticemail-go) |
+| Ruby | `ElasticEmail` (RubyGems) | [elasticemail-ruby](https://github.com/ElasticEmail/elasticemail-ruby) |
+| Rust | `ElasticEmail` (crates.io) | [elasticemail-rust](https://github.com/ElasticEmail/elasticemail-rust) |
+| Perl | `ElasticEmail::*` modules (from GitHub) | [elasticemail-perl](https://github.com/ElasticEmail/elasticemail-perl) |
+| Bash | `ElasticEmail` CLI script | [elasticemail-bash](https://github.com/ElasticEmail/elasticemail-bash) |
+
+## Authentication
+
+| Method | Where it's used | How |
+| --- | --- | --- |
+| API key | REST API and SDKs | `X-ElasticEmail-ApiKey` header |
+| API key | MCP server | `X-Auth-Token` header |
+| SMTP credentials | SMTP relay (`smtp.elasticemail.com`, port 2525) | Account email as username, API key or SMTP credential as password |
+
+Give each API key only the access levels it needs (for example `SendHttp` for sending only). The skill's [authentication reference](skills/elastic-email-api/references/authentication.md) lists them all.
+
+## API limits
+
+- Up to 20 concurrent connections per account
+- 600-second timeout per request
+- 20 MB maximum email size, including attachments
+
+## Versioning
+
+Skills follow [semantic versioning](https://semver.org). The version is set in each skill's `SKILL.md` front matter (`metadata.version`) and published as a [GitHub release](https://github.com/ElasticEmail/elasticemail-skills/releases).
+
+<details>
+<summary><b>Current versions</b></summary>
+
+| Skill | Version | API version |
+| --- | --- | --- |
+| `elastic-email-api` | 1.0.0 | v4 |
+
+</details>
+
+## Contributing
+
+Contributions are welcome! Corrections to endpoints, SDK samples or workflows are especially useful. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+
+- 🐛 [Report a bug](https://github.com/ElasticEmail/elasticemail-skills/issues/new?template=bug_report.md)
+- 💡 [Request a feature](https://github.com/ElasticEmail/elasticemail-skills/issues/new?template=feature_request.md)
+- 🔒 [Report a security issue](SECURITY.md)
+
+This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Support
+
+> [!IMPORTANT]
+> The fastest way to get help is the **chat widget on [elasticemail.com](https://elasticemail.com)**. Our support team can help with your account, sending, deliverability and API questions.
+
+- 💬 [Chat with support on elasticemail.com](https://elasticemail.com) (preferred)
+- 📚 [API documentation](https://elasticemail.com/developers/api-documentation/rest-api)
+- 🧪 [Examples repository](https://github.com/ElasticEmail/elasticemail-examples)
+- 🐛 [GitHub issues](https://github.com/ElasticEmail/elasticemail-skills/issues), for problems with these skills only
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+Released under the [MIT License](LICENSE). Copyright © 2025–2026 Elastic Email.

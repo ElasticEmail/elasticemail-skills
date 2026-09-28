@@ -9,41 +9,41 @@ GitHub organization: https://github.com/ElasticEmail
 ## Python
 
 **Repository:** https://github.com/ElasticEmail/elasticemail-python
-**Requirements:** Python 3.6+
+**Requirements:** Python 3.8+
 **Install:**
 ```bash
 pip install ElasticEmail
-# or from source:
-pip install git+https://github.com/ElasticEmail/elasticemail-python.git
 ```
 
 ### Configuration
 ```python
+import os
 import ElasticEmail
 
 configuration = ElasticEmail.Configuration()
-configuration.api_key['apikey'] = 'YOUR_API_KEY'
+configuration.api_key["apikey"] = os.environ["ELASTICEMAIL_API_KEY"]
 ```
 
 ### Send Transactional Email
 ```python
-from ElasticEmail.api import emails_api
-from ElasticEmail.model.email_transactional_message_data import EmailTransactionalMessageData
-from ElasticEmail.model.transactional_recipient import TransactionalRecipient
-from ElasticEmail.model.email_content import EmailContent
-from ElasticEmail.model.body_part import BodyPart
-from ElasticEmail.model.body_content_type import BodyContentType
+from ElasticEmail.models import (
+    BodyContentType,
+    BodyPart,
+    EmailContent,
+    EmailTransactionalMessageData,
+    TransactionalRecipient,
+)
 
 with ElasticEmail.ApiClient(configuration) as api_client:
-    api_instance = emails_api.EmailsApi(api_client)
+    api_instance = ElasticEmail.EmailsApi(api_client)
 
     email_data = EmailTransactionalMessageData(
         recipients=TransactionalRecipient(to=["recipient@example.com"]),
         content=EmailContent(
-            _from="sender@yourdomain.com",
+            var_from="sender@yourdomain.com",
             subject="Test Email",
             body=[BodyPart(
-                content_type=BodyContentType("HTML"),
+                content_type=BodyContentType.HTML,
                 content="<h1>Hello!</h1>",
                 charset="utf-8",
             )],
@@ -59,17 +59,15 @@ with ElasticEmail.ApiClient(configuration) as api_client:
 
 ### Add Contacts
 ```python
-from ElasticEmail.apis.tags import contacts_api
-from ElasticEmail.model.contact_payload import ContactPayload
-from ElasticEmail.model.contact_status import ContactStatus
+from ElasticEmail.models import ContactPayload, ContactStatus
 
 with ElasticEmail.ApiClient(configuration) as api_client:
-    api_instance = contacts_api.ContactsApi(api_client)
+    api_instance = ElasticEmail.ContactsApi(api_client)
 
     contacts = [
         ContactPayload(
             email="john@example.com",
-            status=ContactStatus("Active"),
+            status=ContactStatus.ACTIVE,
             first_name="John",
             last_name="Smith",
         ),
@@ -84,11 +82,10 @@ with ElasticEmail.ApiClient(configuration) as api_client:
 
 ### Manage Lists
 ```python
-from ElasticEmail.api import lists_api
-from ElasticEmail.model.list_payload import ListPayload
+from ElasticEmail.models import ListPayload
 
 with ElasticEmail.ApiClient(configuration) as api_client:
-    api_instance = lists_api.ListsApi(api_client)
+    api_instance = ElasticEmail.ListsApi(api_client)
 
     # Create list
     list_payload = ListPayload(
@@ -120,24 +117,20 @@ with ElasticEmail.ApiClient(configuration) as api_client:
 
 ### Create Template
 ```python
-from ElasticEmail.api import templates_api
-from ElasticEmail.model.template_payload import TemplatePayload
-from ElasticEmail.model.body_part import BodyPart
-from ElasticEmail.model.body_content_type import BodyContentType
-from ElasticEmail.model.template_scope import TemplateScope
+from ElasticEmail.models import BodyContentType, BodyPart, TemplatePayload, TemplateScope
 
 with ElasticEmail.ApiClient(configuration) as api_client:
-    api_instance = templates_api.TemplatesApi(api_client)
+    api_instance = ElasticEmail.TemplatesApi(api_client)
 
     template = TemplatePayload(
         name="Welcome Email",
         subject="Welcome {firstname}!",
         body=[BodyPart(
-            content_type=BodyContentType("HTML"),
+            content_type=BodyContentType.HTML,
             content="<h1>Welcome {firstname}!</h1>",
             charset="utf-8",
         )],
-        template_scope=TemplateScope("Personal"),
+        template_scope=TemplateScope.PERSONAL,
     )
 
     try:
@@ -149,26 +142,27 @@ with ElasticEmail.ApiClient(configuration) as api_client:
 
 ### Send Bulk Emails
 ```python
-from ElasticEmail.api import emails_api
-from ElasticEmail.model.email_message_data import EmailMessageData
-from ElasticEmail.model.email_recipient import EmailRecipient
-from ElasticEmail.model.email_content import EmailContent
-from ElasticEmail.model.body_part import BodyPart
-from ElasticEmail.model.body_content_type import BodyContentType
+from ElasticEmail.models import (
+    BodyContentType,
+    BodyPart,
+    EmailContent,
+    EmailMessageData,
+    EmailRecipient,
+)
 
 with ElasticEmail.ApiClient(configuration) as api_client:
-    api_instance = emails_api.EmailsApi(api_client)
+    api_instance = ElasticEmail.EmailsApi(api_client)
 
     email_data = EmailMessageData(
         recipients=[
-            EmailRecipient(email="user1@example.com"),
-            EmailRecipient(email="user2@example.com"),
+            EmailRecipient(email="user1@example.com", fields={"firstname": "Alice"}),
+            EmailRecipient(email="user2@example.com", fields={"firstname": "Bob"}),
         ],
         content=EmailContent(
-            _from="sender@yourdomain.com",
+            var_from="sender@yourdomain.com",
             subject="Bulk Message",
             body=[BodyPart(
-                content_type=BodyContentType("HTML"),
+                content_type=BodyContentType.HTML,
                 content="<p>Hello {firstname}!</p>",
                 charset="utf-8",
             )],
@@ -184,15 +178,14 @@ with ElasticEmail.ApiClient(configuration) as api_client:
 
 ### Load Statistics
 ```python
-from ElasticEmail.api import statistics_api
 from datetime import datetime
 
 with ElasticEmail.ApiClient(configuration) as api_client:
-    api_instance = statistics_api.StatisticsApi(api_client)
+    api_instance = ElasticEmail.StatisticsApi(api_client)
 
     try:
         response = api_instance.statistics_get(
-            _from=datetime(2025, 1, 1),
+            var_from=datetime(2025, 1, 1),
             to=datetime(2025, 12, 31),
         )
         print(response)
@@ -215,12 +208,14 @@ Install-Package ElasticEmail
 
 ### Configuration
 ```csharp
+using System;
+using System.Collections.Generic;
 using ElasticEmail.Api;
 using ElasticEmail.Client;
 using ElasticEmail.Model;
 
 var config = new Configuration();
-config.ApiKey.Add("X-ElasticEmail-ApiKey", "YOUR_API_KEY");
+config.ApiKey.Add("X-ElasticEmail-ApiKey", Environment.GetEnvironmentVariable("ELASTICEMAIL_API_KEY"));
 ```
 
 ### Send Transactional Email
@@ -284,47 +279,66 @@ catch (ApiException e)
 
 **Repository:** https://github.com/ElasticEmail/elasticemail-java
 **Requirements:** Java 8+
+**Install:** The SDK is not on Maven Central; it is published on [JitPack](https://jitpack.io/#ElasticEmail/elasticemail-java).
+
 **Install (Maven):**
 ```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
 <dependency>
-    <groupId>com.elasticemail</groupId>
+    <groupId>com.github.ElasticEmail</groupId>
     <artifactId>elasticemail-java</artifactId>
-    <version>LATEST_VERSION</version>
+    <version>4.2.0</version>
 </dependency>
 ```
 
 **Install (Gradle):**
 ```groovy
-implementation 'com.elasticemail:elasticemail-java:LATEST_VERSION'
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'com.github.ElasticEmail:elasticemail-java:4.2.0'
+}
 ```
 
 ### Send Transactional Email
 ```java
-import com.elasticemail.client.*;
 import com.elasticemail.api.EmailsApi;
+import com.elasticemail.client.ApiClient;
+import com.elasticemail.client.ApiException;
+import com.elasticemail.client.Configuration;
+import com.elasticemail.client.auth.ApiKeyAuth;
 import com.elasticemail.model.*;
 
 ApiClient apiClient = Configuration.getDefaultApiClient();
 ApiKeyAuth apiKey = (ApiKeyAuth) apiClient.getAuthentication("apikey");
-apiKey.setApiKey("YOUR_API_KEY");
+apiKey.setApiKey(System.getenv("ELASTICEMAIL_API_KEY"));
 
 EmailsApi emailsApi = new EmailsApi(apiClient);
 
 EmailTransactionalMessageData emailData = new EmailTransactionalMessageData()
-    .recipients(new TransactionalRecipient().to(List.of("recipient@example.com")))
+    .recipients(new TransactionalRecipient().addToItem("recipient@example.com"))
     .content(new EmailContent()
         .from("sender@yourdomain.com")
         .subject("Test Email")
-        .body(List.of(new BodyPart()
+        .addBodyItem(new BodyPart()
             .contentType(BodyContentType.HTML)
             .content("<h1>Hello!</h1>")
-            .charset("utf-8"))));
+            .charset("utf-8")));
 
 try {
     EmailSend response = emailsApi.emailsTransactionalPost(emailData);
-    System.out.println(response);
+    System.out.println("TransactionID: " + response.getTransactionID());
 } catch (ApiException e) {
-    System.err.println("Error: " + e.getMessage());
+    System.err.println("Error " + e.getCode() + ": " + e.getResponseBody());
 }
 ```
 
@@ -345,7 +359,7 @@ composer require elasticemail/elasticemail-php
 require_once __DIR__ . '/vendor/autoload.php';
 
 $config = ElasticEmail\Configuration::getDefaultConfiguration()
-    ->setApiKey('X-ElasticEmail-ApiKey', 'YOUR_API_KEY');
+    ->setApiKey('X-ElasticEmail-ApiKey', getenv('ELASTICEMAIL_API_KEY'));
 
 $apiInstance = new ElasticEmail\Api\EmailsApi(
     new GuzzleHttp\Client(),
@@ -371,9 +385,9 @@ $emailData = new \ElasticEmail\Model\EmailTransactionalMessageData([
 
 try {
     $result = $apiInstance->emailsTransactionalPost($emailData);
-    print_r($result);
-} catch (Exception $e) {
-    echo 'Error: ' . $e->getMessage();
+    echo 'TransactionID: ' . $result->getTransactionId();
+} catch (\ElasticEmail\ApiException $e) {
+    echo 'Error ' . $e->getCode() . ': ' . $e->getResponseBody();
 }
 ```
 
@@ -382,7 +396,7 @@ try {
 ## JavaScript
 
 **Repository:** https://github.com/ElasticEmail/elasticemail-js
-**Requirements:** Node.js 12+
+**Requirements:** Node.js (current LTS recommended); browsers via a bundler
 **Install:**
 ```bash
 npm install @elasticemail/elasticemail-client
@@ -393,8 +407,7 @@ npm install @elasticemail/elasticemail-client
 const ElasticEmail = require('@elasticemail/elasticemail-client');
 
 const client = ElasticEmail.ApiClient.instance;
-const apiKey = client.authentications['apikey'];
-apiKey.apiKey = 'YOUR_API_KEY';
+client.authentications['apikey'].apiKey = process.env.ELASTICEMAIL_API_KEY;
 
 const emailsApi = new ElasticEmail.EmailsApi();
 
@@ -425,35 +438,45 @@ emailsApi.emailsTransactionalPost(emailData, (error, data) => {
 ## TypeScript (Angular)
 
 **Repository:** https://github.com/ElasticEmail/elasticemail-ts-angular
-**Requirements:** Angular 12+
+**Requirements:** Angular 19, RxJS ^7.4, TypeScript >=5.5 <5.7
 **Install:**
 ```bash
-npm install @elasticemail/elasticemail-client
+npm install @elasticemail/elasticemail-client-ts-angular
+```
+
+### Configure (server-side providers, e.g. `app.config.server.ts` with Angular SSR)
+Never ship the API key in a browser bundle. Also add `provideHttpClient()` to your app providers.
+```typescript
+import { Configuration } from '@elasticemail/elasticemail-client-ts-angular';
+
+// inside ApplicationConfig.providers
+{
+    provide: Configuration,
+    useFactory: () => new Configuration({
+        credentials: { apikey: () => process.env['ELASTICEMAIL_API_KEY'] },
+    }),
+}
 ```
 
 ### Service Example
 ```typescript
-import { Injectable } from '@angular/core';
-import { EmailsService, Configuration } from '@elasticemail/elasticemail-client';
+import { Injectable, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { BodyContentType, EmailsService } from '@elasticemail/elasticemail-client-ts-angular';
 
 @Injectable({ providedIn: 'root' })
 export class EmailService {
-    private emailsApi: EmailsService;
-
-    constructor() {
-        const config = new Configuration({ apiKeys: { apikey: 'YOUR_API_KEY' } });
-        this.emailsApi = new EmailsService(undefined, undefined, config);
-    }
+    private readonly emailsApi = inject(EmailsService);
 
     async sendTransactionalEmail(to: string, subject: string, htmlBody: string) {
-        return this.emailsApi.emailsTransactionalPost({
+        return firstValueFrom(this.emailsApi.emailsTransactionalPost({
             Recipients: { To: [to] },
             Content: {
                 From: 'sender@yourdomain.com',
                 Subject: subject,
-                Body: [{ ContentType: 'HTML', Content: htmlBody, Charset: 'utf-8' }]
+                Body: [{ ContentType: BodyContentType.Html, Content: htmlBody, Charset: 'utf-8' }]
             }
-        }).toPromise();
+        }));
     }
 }
 ```
@@ -463,17 +486,17 @@ export class EmailService {
 ## TypeScript (Axios)
 
 **Repository:** https://github.com/ElasticEmail/elasticemail-ts-axios
-**Requirements:** Node.js 12+ with Axios
+**Requirements:** Node.js (current LTS recommended); uses axios 1.x
 **Install:**
 ```bash
-npm install @elasticemail/elasticemail-client
+npm install @elasticemail/elasticemail-client-ts-axios
 ```
 
 ### Send Transactional Email
 ```typescript
-import { Configuration, EmailsApi, EmailTransactionalMessageData } from '@elasticemail/elasticemail-client';
+import { Configuration, EmailsApi, EmailTransactionalMessageData } from '@elasticemail/elasticemail-client-ts-axios';
 
-const config = new Configuration({ apiKey: 'YOUR_API_KEY' });
+const config = new Configuration({ apiKey: process.env.ELASTICEMAIL_API_KEY });
 const emailsApi = new EmailsApi(config);
 
 const emailData: EmailTransactionalMessageData = {
@@ -501,8 +524,10 @@ try {
 **Requirements:** Go 1.18+
 **Install:**
 ```bash
-go get github.com/ElasticEmail/elasticemail-go
+go get github.com/elasticemail/elasticemail-go/v4@latest
 ```
+
+The module path ends in `/v4` and the package name is `ElasticEmail`.
 
 ### Send Transactional Email
 ```go
@@ -511,34 +536,37 @@ package main
 import (
     "context"
     "fmt"
-    ee "github.com/ElasticEmail/elasticemail-go"
+    "os"
+
+    ElasticEmail "github.com/elasticemail/elasticemail-go/v4"
 )
 
 func main() {
-    cfg := ee.NewConfiguration()
-    cfg.AddDefaultHeader("X-ElasticEmail-ApiKey", "YOUR_API_KEY")
-    client := ee.NewAPIClient(cfg)
+    client := ElasticEmail.NewAPIClient(ElasticEmail.NewConfiguration())
+    ctx := context.WithValue(context.Background(), ElasticEmail.ContextAPIKeys,
+        map[string]ElasticEmail.APIKey{
+            "apikey": {Key: os.Getenv("ELASTICEMAIL_API_KEY")},
+        })
 
-    emailData := *ee.NewEmailTransactionalMessageData(
-        *ee.NewTransactionalRecipient([]string{"recipient@example.com"}),
-        *ee.NewEmailContent(),
-    )
-    emailData.Content.SetFrom("sender@yourdomain.com")
-    emailData.Content.SetSubject("Test Email")
-    emailData.Content.SetBody([]ee.BodyPart{{
-        ContentType: ee.BODYCONTENTTYPE_HTML.Ptr(),
-        Content:     ee.PtrString("<h1>Hello!</h1>"),
-        Charset:     ee.PtrString("utf-8"),
-    }})
+    html := ElasticEmail.NewBodyPart(ElasticEmail.BODYCONTENTTYPE_HTML)
+    html.SetContent("<h1>Hello!</h1>")
+    html.SetCharset("utf-8")
 
-    resp, _, err := client.EmailsApi.EmailsTransactionalPost(context.Background()).
-        EmailTransactionalMessageData(emailData).
+    content := ElasticEmail.NewEmailContent("sender@yourdomain.com")
+    content.SetSubject("Test Email")
+    content.SetBody([]ElasticEmail.BodyPart{*html})
+
+    recipients := ElasticEmail.NewTransactionalRecipient([]string{"recipient@example.com"})
+    emailData := ElasticEmail.NewEmailTransactionalMessageData(*recipients, *content)
+
+    resp, _, err := client.EmailsAPI.EmailsTransactionalPost(ctx).
+        EmailTransactionalMessageData(*emailData).
         Execute()
     if err != nil {
         fmt.Printf("Error: %v\n", err)
         return
     }
-    fmt.Println(resp)
+    fmt.Println(resp.GetTransactionID())
 }
 ```
 
@@ -547,7 +575,7 @@ func main() {
 ## Ruby
 
 **Repository:** https://github.com/ElasticEmail/elasticemail-ruby
-**Requirements:** Ruby 2.5+
+**Requirements:** Ruby 2.7+
 **Install:**
 ```bash
 gem install ElasticEmail
@@ -558,7 +586,7 @@ gem install ElasticEmail
 require 'ElasticEmail'
 
 ElasticEmail.configure do |config|
-  config.api_key['apikey'] = 'YOUR_API_KEY'
+  config.api_key['X-ElasticEmail-ApiKey'] = ENV.fetch('ELASTICEMAIL_API_KEY')
 end
 
 api_instance = ElasticEmail::EmailsApi.new
@@ -569,7 +597,7 @@ email_data = ElasticEmail::EmailTransactionalMessageData.new(
     from: 'sender@yourdomain.com',
     subject: 'Test Email',
     body: [ElasticEmail::BodyPart.new(
-      content_type: 'HTML',
+      content_type: ElasticEmail::BodyContentType::HTML,
       content: '<h1>Hello!</h1>',
       charset: 'utf-8'
     )]
@@ -589,56 +617,146 @@ end
 ## Rust
 
 **Repository:** https://github.com/ElasticEmail/elasticemail-rust
-**Requirements:** Rust 1.56+
-**Install:** Add to `Cargo.toml`:
+**Requirements:** Rust 1.75+
+**Install:** Add to `Cargo.toml` (the crate is published on crates.io as `ElasticEmail`):
 ```toml
 [dependencies]
-elasticemail = { git = "https://github.com/ElasticEmail/elasticemail-rust" }
+ElasticEmail = "4.2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-### Usage
-Refer to the GitHub repository README for complete Rust API client usage examples, as the library follows the standard OpenAPI-generated pattern with async/await support.
+### Send Transactional Email
+```rust
+use ElasticEmail::apis::configuration::{ApiKey, Configuration};
+use ElasticEmail::apis::emails_api;
+use ElasticEmail::models::{
+    BodyContentType, BodyPart, EmailContent, EmailTransactionalMessageData, TransactionalRecipient,
+};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let config = Configuration {
+        api_key: Some(ApiKey {
+            prefix: None,
+            key: std::env::var("ELASTICEMAIL_API_KEY")?,
+        }),
+        ..Default::default()
+    };
+
+    let content = EmailContent {
+        subject: Some("Test Email".to_string()),
+        body: Some(vec![BodyPart {
+            content: Some("<h1>Hello!</h1>".to_string()),
+            charset: Some("utf-8".to_string()),
+            ..BodyPart::new(BodyContentType::Html)
+        }]),
+        ..EmailContent::new("sender@yourdomain.com".to_string())
+    };
+
+    let email_data = EmailTransactionalMessageData::new(
+        TransactionalRecipient::new(vec!["recipient@example.com".to_string()]),
+        content,
+    );
+
+    match emails_api::emails_transactional_post(&config, email_data).await {
+        Ok(result) => println!("{:?}", result.transaction_id),
+        Err(e) => eprintln!("Error: {e}"),
+    }
+    Ok(())
+}
+```
 
 ---
 
 ## Perl
 
 **Repository:** https://github.com/ElasticEmail/elasticemail-perl
-**Requirements:** Perl 5.26+
-**Install:** Clone from GitHub and follow the repository instructions.
+**Requirements:** Perl 5.10+
+**Install:** Not on CPAN (the `ElasticEmail` CPAN distribution is an unrelated legacy client). Clone and install dependencies:
+```bash
+git clone https://github.com/ElasticEmail/elasticemail-perl.git
+cd elasticemail-perl && cpanm --installdeps .
+export PERL5LIB=$PWD/lib:$PERL5LIB
+```
 
-### Usage
-Refer to the GitHub repository README for complete Perl API client usage examples.
+### Send Transactional Email
+Model constructors take the API field names (`To`, `From`, `ContentType`); results use snake_case accessors.
+```perl
+use strict;
+use warnings;
+use ElasticEmail::EmailsApi;
+use ElasticEmail::Object::EmailTransactionalMessageData;
+use ElasticEmail::Object::TransactionalRecipient;
+use ElasticEmail::Object::EmailContent;
+use ElasticEmail::Object::BodyPart;
+
+my $emails = ElasticEmail::EmailsApi->new(
+    api_key => { 'X-ElasticEmail-ApiKey' => $ENV{ELASTICEMAIL_API_KEY} },
+);
+
+my $message = ElasticEmail::Object::EmailTransactionalMessageData->new(
+    Recipients => ElasticEmail::Object::TransactionalRecipient->new(
+        To => ['recipient@example.com'],
+    ),
+    Content => ElasticEmail::Object::EmailContent->new(
+        From    => 'sender@yourdomain.com',
+        Subject => 'Test Email',
+        Body    => [
+            ElasticEmail::Object::BodyPart->new(
+                ContentType => 'HTML',
+                Content     => '<h1>Hello!</h1>',
+            ),
+        ],
+    ),
+);
+
+my $result = eval {
+    $emails->emails_transactional_post(email_transactional_message_data => $message);
+};
+if ($@) {
+    warn "Error: $@";    # e.g. "API Exception(401): Unauthorized ..."
+} else {
+    print "TransactionID: ", $result->transaction_id, "\n";
+}
+```
 
 ---
 
 ## Bash
 
 **Repository:** https://github.com/ElasticEmail/elasticemail-bash
-**Requirements:** Bash 4.0+, cURL
-**Install:** Clone from GitHub.
+**Requirements:** Bash 4.3+ (macOS's default Bash 3.2 is too old), cURL
+**Install:**
+```bash
+curl -fsSLO https://raw.githubusercontent.com/ElasticEmail/elasticemail-bash/master/ElasticEmail
+chmod u+x ElasticEmail
+```
 
 ### Usage
-The Bash client provides shell scripts for all API endpoints. Each endpoint has a corresponding function that can be called with the required parameters.
+The Bash client is a single `ElasticEmail` CLI script (not a sourced library). Each API operation is a subcommand named after its operationId (`emailsTransactionalPost`, `contactsGet`, ...). Pass `--host` (without `/v4`) before the operation, and the API key as a `HEADER:VALUE` argument after it. Run `./ElasticEmail <operation> -h` for per-operation help and `--dry-run` to print the cURL command.
 
 ```bash
-# Source the client
-source elasticemail-client.sh
+export ELASTICEMAIL_API_KEY="YOUR_API_KEY"
 
-# Configure API key
-export ELASTIC_EMAIL_API_KEY="YOUR_API_KEY"
-
-# Send transactional email
-EmailsTransactionalPost \
-    --header "x-elasticemail-apikey: $ELASTIC_EMAIL_API_KEY" \
-    --body '{"Recipients":{"To":["recipient@example.com"]},"Content":{"From":"sender@yourdomain.com","Subject":"Test","Body":[{"ContentType":"HTML","Content":"<h1>Hello!</h1>"}]}}'
+# Send transactional email (JSON body read from stdin via "-")
+cat <<'JSON' | ./ElasticEmail --host "https://api.elasticemail.com" --content-type json \
+  emailsTransactionalPost - "X-ElasticEmail-ApiKey:$ELASTICEMAIL_API_KEY"
+{
+  "Recipients": { "To": ["recipient@example.com"] },
+  "Content": {
+    "From": "sender@yourdomain.com",
+    "Subject": "Test",
+    "Body": [{ "ContentType": "HTML", "Content": "<h1>Hello!</h1>" }]
+  }
+}
+JSON
 ```
 
 ---
 
 ## Common SDK API Classes
 
-All SDK libraries provide the following API classes:
+The class-based SDKs share the same API classes. Names follow each language's conventions (for example `EmailsAPI` in Go, `ElasticEmail::EmailsApi` in Perl, `EmailsService` in TypeScript Angular). The Bash SDK exposes the same operations as subcommands (for example `emailsTransactionalPost`).
 
 | API Class | Description |
 |---|---|
@@ -657,3 +775,4 @@ All SDK libraries provide the following API classes:
 | `SuppressionsApi` | Bounce, complaint, and unsubscribe management |
 | `TemplatesApi` | Email template CRUD |
 | `VerificationsApi` | Email address verification |
+| `WebhookApi` | Webhook management for delivery events |

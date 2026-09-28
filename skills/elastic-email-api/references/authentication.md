@@ -95,10 +95,11 @@ DELETE /security/smtp/{name} — Delete credential
 
 ### Python
 ```python
+import os
 import ElasticEmail
 
 configuration = ElasticEmail.Configuration()
-configuration.api_key['apikey'] = 'YOUR_API_KEY'
+configuration.api_key["apikey"] = os.environ["ELASTICEMAIL_API_KEY"]
 
 with ElasticEmail.ApiClient(configuration) as api_client:
     # Use api_client for all API operations
@@ -107,46 +108,77 @@ with ElasticEmail.ApiClient(configuration) as api_client:
 
 ### C#
 ```csharp
+using System;
 using ElasticEmail.Client;
 
 var config = new Configuration();
-config.ApiKey.Add("X-ElasticEmail-ApiKey", "YOUR_API_KEY");
+config.ApiKey.Add("X-ElasticEmail-ApiKey", Environment.GetEnvironmentVariable("ELASTICEMAIL_API_KEY"));
 ```
 
 ### Java
 ```java
-import com.elasticemail.client.*;
+import com.elasticemail.client.ApiClient;
+import com.elasticemail.client.Configuration;
+import com.elasticemail.client.auth.ApiKeyAuth;
 
 ApiClient apiClient = Configuration.getDefaultApiClient();
 ApiKeyAuth apiKey = (ApiKeyAuth) apiClient.getAuthentication("apikey");
-apiKey.setApiKey("YOUR_API_KEY");
+apiKey.setApiKey(System.getenv("ELASTICEMAIL_API_KEY"));
 ```
 
 ### PHP
 ```php
 $config = ElasticEmail\Configuration::getDefaultConfiguration()
-    ->setApiKey('X-ElasticEmail-ApiKey', 'YOUR_API_KEY');
+    ->setApiKey('X-ElasticEmail-ApiKey', getenv('ELASTICEMAIL_API_KEY'));
+```
+
+### Perl
+```perl
+my $emails = ElasticEmail::EmailsApi->new(
+    api_key => { 'X-ElasticEmail-ApiKey' => $ENV{ELASTICEMAIL_API_KEY} },
+);
+```
+
+### Bash (elasticemail-bash)
+```bash
+./ElasticEmail --host "https://api.elasticemail.com" contactsGet limit=10 \
+  "X-ElasticEmail-ApiKey:$ELASTICEMAIL_API_KEY"
 ```
 
 ### JavaScript
 ```javascript
 const ElasticEmail = require('@elasticemail/elasticemail-client');
 const client = ElasticEmail.ApiClient.instance;
-const apiKey = client.authentications['apikey'];
-apiKey.apiKey = 'YOUR_API_KEY';
+client.authentications['apikey'].apiKey = process.env.ELASTICEMAIL_API_KEY;
+```
+
+### TypeScript (Axios)
+```typescript
+import { Configuration, EmailsApi } from '@elasticemail/elasticemail-client-ts-axios';
+const emailsApi = new EmailsApi(new Configuration({ apiKey: process.env.ELASTICEMAIL_API_KEY }));
+```
+
+### TypeScript (Angular)
+```typescript
+import { Configuration } from '@elasticemail/elasticemail-client-ts-angular';
+// In the server-side (SSR) providers; never ship the key in a browser bundle
+{ provide: Configuration, useFactory: () => new Configuration({ credentials: { apikey: () => process.env['ELASTICEMAIL_API_KEY'] } }) }
 ```
 
 ### Go
 ```go
-cfg := ee.NewConfiguration()
-cfg.AddDefaultHeader("X-ElasticEmail-ApiKey", "YOUR_API_KEY")
-client := ee.NewAPIClient(cfg)
+client := ElasticEmail.NewAPIClient(ElasticEmail.NewConfiguration())
+ctx := context.WithValue(context.Background(), ElasticEmail.ContextAPIKeys,
+    map[string]ElasticEmail.APIKey{
+        "apikey": {Key: os.Getenv("ELASTICEMAIL_API_KEY")},
+    })
+// pass ctx to every call, e.g. client.EmailsAPI.EmailsTransactionalPost(ctx)
 ```
 
 ### Ruby
 ```ruby
 ElasticEmail.configure do |config|
-  config.api_key['apikey'] = 'YOUR_API_KEY'
+  config.api_key['X-ElasticEmail-ApiKey'] = ENV.fetch('ELASTICEMAIL_API_KEY')
 end
 ```
 
@@ -214,6 +246,7 @@ When you exceed the concurrent connection limit, the API returns `429 Too Many R
 
 ```python
 import time
+import ElasticEmail
 
 def api_call_with_retry(func, max_retries=5):
     for attempt in range(max_retries):

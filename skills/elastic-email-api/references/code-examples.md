@@ -40,36 +40,38 @@ curl -X POST "https://api.elasticemail.com/v4/emails/transactional" \
 
 ### Python
 ```python
+import os
 import ElasticEmail
-from ElasticEmail.api import emails_api
-from ElasticEmail.model.email_transactional_message_data import EmailTransactionalMessageData
-from ElasticEmail.model.transactional_recipient import TransactionalRecipient
-from ElasticEmail.model.email_content import EmailContent
-from ElasticEmail.model.body_part import BodyPart
-from ElasticEmail.model.body_content_type import BodyContentType
+from ElasticEmail.models import (
+    BodyContentType,
+    BodyPart,
+    EmailContent,
+    EmailTransactionalMessageData,
+    TransactionalRecipient,
+)
 
 configuration = ElasticEmail.Configuration()
-configuration.api_key['apikey'] = 'YOUR_API_KEY'
+configuration.api_key["apikey"] = os.environ["ELASTICEMAIL_API_KEY"]
 
 with ElasticEmail.ApiClient(configuration) as api_client:
-    api_instance = emails_api.EmailsApi(api_client)
+    api_instance = ElasticEmail.EmailsApi(api_client)
 
     email_data = EmailTransactionalMessageData(
         recipients=TransactionalRecipient(
             to=["recipient@example.com"],
         ),
         content=EmailContent(
-            _from="sender@yourdomain.com",
+            var_from="sender@yourdomain.com",
             reply_to="reply@yourdomain.com",
             subject="Order Confirmation #12345",
             body=[
                 BodyPart(
-                    content_type=BodyContentType("HTML"),
+                    content_type=BodyContentType.HTML,
                     content="<h1>Thank you!</h1><p>Order #12345 confirmed.</p>",
                     charset="utf-8",
                 ),
                 BodyPart(
-                    content_type=BodyContentType("PlainText"),
+                    content_type=BodyContentType.PLAINTEXT,
                     content="Thank you! Order #12345 confirmed.",
                     charset="utf-8",
                 ),
@@ -87,12 +89,14 @@ with ElasticEmail.ApiClient(configuration) as api_client:
 
 ### C#
 ```csharp
+using System;
+using System.Collections.Generic;
 using ElasticEmail.Api;
 using ElasticEmail.Client;
 using ElasticEmail.Model;
 
 var config = new Configuration();
-config.ApiKey.Add("X-ElasticEmail-ApiKey", "YOUR_API_KEY");
+config.ApiKey.Add("X-ElasticEmail-ApiKey", Environment.GetEnvironmentVariable("ELASTICEMAIL_API_KEY"));
 
 var emailsApi = new EmailsApi(config);
 
@@ -119,10 +123,11 @@ try
 {
     var response = emailsApi.EmailsTransactionalPost(emailData);
     Console.WriteLine($"TransactionID: {response.TransactionID}");
+    Console.WriteLine($"MessageID: {response.MessageID}");
 }
 catch (ApiException e)
 {
-    Console.WriteLine($"Error: {e.Message}");
+    Console.WriteLine($"Error {e.ErrorCode}: {e.Message}");
 }
 ```
 
@@ -132,7 +137,7 @@ catch (ApiException e)
 require_once __DIR__ . '/vendor/autoload.php';
 
 $config = ElasticEmail\Configuration::getDefaultConfiguration()
-    ->setApiKey('X-ElasticEmail-ApiKey', 'YOUR_API_KEY');
+    ->setApiKey('X-ElasticEmail-ApiKey', getenv('ELASTICEMAIL_API_KEY'));
 
 $apiInstance = new ElasticEmail\Api\EmailsApi(new GuzzleHttp\Client(), $config);
 
@@ -156,8 +161,8 @@ $emailData = new \ElasticEmail\Model\EmailTransactionalMessageData([
 try {
     $result = $apiInstance->emailsTransactionalPost($emailData);
     echo "TransactionID: " . $result->getTransactionId();
-} catch (Exception $e) {
-    echo "Error: " . $e->getMessage();
+} catch (\ElasticEmail\ApiException $e) {
+    echo "Error " . $e->getCode() . ": " . $e->getResponseBody();
 }
 ```
 
@@ -193,15 +198,19 @@ curl -X POST "https://api.elasticemail.com/v4/emails" \
 
 ### Python
 ```python
-from ElasticEmail.api import emails_api
-from ElasticEmail.model.email_message_data import EmailMessageData
-from ElasticEmail.model.email_recipient import EmailRecipient
-from ElasticEmail.model.email_content import EmailContent
-from ElasticEmail.model.body_part import BodyPart
-from ElasticEmail.model.body_content_type import BodyContentType
+import ElasticEmail
+from ElasticEmail.models import (
+    BodyContentType,
+    BodyPart,
+    EmailContent,
+    EmailMessageData,
+    EmailRecipient,
+)
+
+# `configuration` as in the transactional example above
 
 with ElasticEmail.ApiClient(configuration) as api_client:
-    api_instance = emails_api.EmailsApi(api_client)
+    api_instance = ElasticEmail.EmailsApi(api_client)
 
     email_data = EmailMessageData(
         recipients=[
@@ -209,10 +218,10 @@ with ElasticEmail.ApiClient(configuration) as api_client:
             EmailRecipient(email="user2@example.com", fields={"firstname": "Bob"}),
         ],
         content=EmailContent(
-            _from="newsletter@yourdomain.com",
+            var_from="newsletter@yourdomain.com",
             subject="Weekly Newsletter",
             body=[BodyPart(
-                content_type=BodyContentType("HTML"),
+                content_type=BodyContentType.HTML,
                 content="<h1>Hello {firstname}!</h1><p>Your weekly update.</p>",
                 charset="utf-8",
             )],

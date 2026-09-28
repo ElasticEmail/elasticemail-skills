@@ -70,18 +70,18 @@ Elastic Email provides official client libraries for rapid integration. All libr
 
 | Language | Package / Repository | Install Command |
 |---|---|---|
-| **Python** | `ElasticEmail` | `pip install ElasticEmail` or `pip install git+https://github.com/ElasticEmail/elasticemail-python.git` |
+| **Python** | `ElasticEmail` | `pip install ElasticEmail` |
 | **C#** | `ElasticEmail` (NuGet) | `dotnet add package ElasticEmail` |
-| **Java** | `elasticemail-java` | Add Maven/Gradle dependency from GitHub |
+| **Java** | `com.github.ElasticEmail:elasticemail-java` (JitPack) | Add the JitPack repository (`https://jitpack.io`) and the Maven/Gradle dependency `com.github.ElasticEmail:elasticemail-java:4.2.0` |
 | **PHP** | `elasticemail/elasticemail-php` | `composer require elasticemail/elasticemail-php` |
 | **JavaScript** | `@elasticemail/elasticemail-client` | `npm install @elasticemail/elasticemail-client` |
-| **TypeScript Angular** | `@elasticemail/elasticemail-client` | `npm install @elasticemail/elasticemail-client` |
-| **TypeScript Axios** | `@elasticemail/elasticemail-client` | `npm install @elasticemail/elasticemail-client` |
-| **Go** | `elasticemail-go` | `go get github.com/ElasticEmail/elasticemail-go` |
-| **Ruby** | `ElasticEmail` | `gem install ElasticEmail` |
-| **Rust** | `elasticemail` | Add to `Cargo.toml` from GitHub |
-| **Perl** | `ElasticEmail::Client` | Install from GitHub |
-| **Bash** | Shell scripts | Clone from GitHub |
+| **TypeScript Angular** | `@elasticemail/elasticemail-client-ts-angular` | `npm install @elasticemail/elasticemail-client-ts-angular` |
+| **TypeScript Axios** | `@elasticemail/elasticemail-client-ts-axios` | `npm install @elasticemail/elasticemail-client-ts-axios` |
+| **Go** | `github.com/elasticemail/elasticemail-go/v4` (package `ElasticEmail`) | `go get github.com/elasticemail/elasticemail-go/v4@latest` |
+| **Ruby** | `ElasticEmail` (RubyGems) | `gem install ElasticEmail` |
+| **Rust** | `ElasticEmail` (crates.io) | `cargo add ElasticEmail` |
+| **Perl** | `elasticemail-perl` (modules `ElasticEmail::*`, not on CPAN) | `git clone https://github.com/ElasticEmail/elasticemail-perl.git && cpanm --installdeps .` |
+| **Bash** | `elasticemail-bash` (single `ElasticEmail` CLI script) | `curl -fsSLO https://raw.githubusercontent.com/ElasticEmail/elasticemail-bash/master/ElasticEmail && chmod u+x ElasticEmail` |
 
 > **Note:** Always check the respective GitHub repository for the latest version and installation instructions.
 
@@ -138,30 +138,32 @@ curl -X POST "https://api.elasticemail.com/v4/emails" \
 ## Quick Start — Python SDK
 
 ```python
+import os
 import ElasticEmail
-from ElasticEmail.api import emails_api
-from ElasticEmail.model.email_transactional_message_data import EmailTransactionalMessageData
-from ElasticEmail.model.transactional_recipient import TransactionalRecipient
-from ElasticEmail.model.email_content import EmailContent
-from ElasticEmail.model.body_part import BodyPart
-from ElasticEmail.model.body_content_type import BodyContentType
+from ElasticEmail.models import (
+    BodyContentType,
+    BodyPart,
+    EmailContent,
+    EmailTransactionalMessageData,
+    TransactionalRecipient,
+)
 
 configuration = ElasticEmail.Configuration()
-configuration.api_key['apikey'] = 'YOUR_API_KEY'
+configuration.api_key["apikey"] = os.environ["ELASTICEMAIL_API_KEY"]
 
 with ElasticEmail.ApiClient(configuration) as api_client:
-    api_instance = emails_api.EmailsApi(api_client)
+    api_instance = ElasticEmail.EmailsApi(api_client)
 
     email_data = EmailTransactionalMessageData(
         recipients=TransactionalRecipient(
             to=["recipient@example.com"],
         ),
         content=EmailContent(
-            _from="sender@yourdomain.com",
+            var_from="sender@yourdomain.com",
             subject="Hello from Elastic Email",
             body=[
                 BodyPart(
-                    content_type=BodyContentType("HTML"),
+                    content_type=BodyContentType.HTML,
                     content="<h1>Hello!</h1><p>This is a test email.</p>",
                     charset="utf-8",
                 ),
@@ -179,12 +181,14 @@ with ElasticEmail.ApiClient(configuration) as api_client:
 ## Quick Start — C# SDK
 
 ```csharp
+using System;
+using System.Collections.Generic;
 using ElasticEmail.Api;
 using ElasticEmail.Client;
 using ElasticEmail.Model;
 
 var config = new Configuration();
-config.ApiKey.Add("X-ElasticEmail-ApiKey", "YOUR_API_KEY");
+config.ApiKey.Add("X-ElasticEmail-ApiKey", Environment.GetEnvironmentVariable("ELASTICEMAIL_API_KEY"));
 
 var emailsApi = new EmailsApi(config);
 
@@ -207,8 +211,8 @@ var emailData = new EmailTransactionalMessageData(
     }
 );
 
-var response = emailsApi.EmailsTransactionalPost(emailData);
-Console.WriteLine(response);
+EmailSend response = emailsApi.EmailsTransactionalPost(emailData);
+Console.WriteLine($"TransactionID: {response.TransactionID}, MessageID: {response.MessageID}");
 ```
 
 ## Quick Start — JavaScript SDK
@@ -217,8 +221,7 @@ Console.WriteLine(response);
 const ElasticEmail = require('@elasticemail/elasticemail-client');
 
 const client = ElasticEmail.ApiClient.instance;
-const apiKey = client.authentications['apikey'];
-apiKey.apiKey = 'YOUR_API_KEY';
+client.authentications['apikey'].apiKey = process.env.ELASTICEMAIL_API_KEY;
 
 const emailsApi = new ElasticEmail.EmailsApi();
 
@@ -289,7 +292,7 @@ All SDK libraries follow the same pattern:
 
 ## Elastic Email MCP Server
 
-The Elastic Email MCP (Model Context Protocol) server turns AI tools into email agents. It is available as a hosted service at `https://mcp.elasticemail.com` — no local installation required. Alternatively, a self-hosted .NET server is available at https://github.com/ElasticEmail/elasticemail-mcp-server. For detailed MCP tool documentation, consult `references/mcp-tools.md`.
+The Elastic Email MCP (Model Context Protocol) server turns AI tools into email agents. It is available as a hosted service at `https://mcp.elasticemail.com` — no local installation required. Alternatively, a self-hosted .NET server is available at https://github.com/ElasticEmail/elasticemail-mcp-server. For every tool's parameters, behavior and gotchas, consult `references/mcp-tools.md`.
 
 **Documentation:** https://help.elasticemail.com/en/articles/12595879-elastic-email-mcp
 
@@ -332,9 +335,9 @@ Requires .NET SDK 10+. After building and running the server locally (port 5001)
 | Category | Tools | Description |
 |---|---|---|
 | **Emails** | `SendTransactionalEmail`, `SendBulkEmails` | Send transactional and bulk emails |
-| **Campaigns** | `CreateCampaign`, `ListCampaigns`, `GetCampaign`, `Pause`, `UpdateCampaign` | Campaign lifecycle |
+| **Campaigns** | `CreateCampaign`, `ListCampaigns`, `GetCampaign`, `PauseCampaign`, `UpdateCampaign` | Campaign lifecycle |
 | **Contacts** | `FetchContacts`, `AddContact`, `DeleteContacts`, `UploadContacts`, `FetchContactHistory` | Contact CRUD and history |
-| **Lists** | `FetchLists`, `FetchList`, `FetchListContacts`, `CreateList`, `AddContactToList`, `RemoveContactsToList` | List management |
+| **Lists** | `FetchLists`, `FetchList`, `FetchListContacts`, `CreateList`, `AddContactsToList`, `RemoveContactsFromList` | List management |
 | **Segments** | `CreateSegment`, `GetSegments`, `GetSegment` | Segment operations |
 | **Templates** | `FetchTemplates`, `FetchTemplate` | Template retrieval |
 | **Statistics** | `GetCampaignStatistics`, `GetAllCampaignStatistics` | Campaign analytics |

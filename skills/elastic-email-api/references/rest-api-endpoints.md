@@ -2,7 +2,11 @@
 
 Base URL: `https://api.elasticemail.com/v4`
 
-Authentication: Send API key in header `x-elasticemail-apikey: YOUR_API_KEY`
+Authentication: Send API key in header `X-ElasticEmail-ApiKey: YOUR_API_KEY` (header names are case-insensitive)
+
+Request and response bodies are JSON with **PascalCase** field names (`Recipients`, `Content`, `ListName`, ...).
+
+Errors return a 4xx/5xx status with a body like `{"Error": "APIKey Expired"}`. Note that a missing/invalid API key or missing access level returns **400**, not 401/403.
 
 ---
 
@@ -29,6 +33,26 @@ POST /campaigns
 Creates a new campaign for processing. Required Access Level: **ModifyCampaigns**
 
 **Request Body:** Campaign object (JSON)
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `Name` | string | Yes | Campaign name |
+| `Recipients` | object | Yes | `{ "ListNames": [...], "SegmentNames": [...] }` |
+| `Content` | array | No | Array of `{ From, ReplyTo, Subject, TemplateName, Poolname, AttachFiles, Utm }` (`From` required). Multiple items = A/X split campaign. Campaign content references a stored template via `TemplateName` (no inline body). |
+| `Status` | string | No | `Deleted`, `Active`, `Processing`, `Sending`, `Completed`, `Paused`, `Cancelled`, `Draft` |
+| `ExcludedRecipients` | object | No | Same shape as `Recipients` |
+| `Options` | object | No | `DeliveryOptimization` (`None`, `ToEngagedFirst`, `ByOpenTime`), `TrackOpens`, `TrackClicks`, `ScheduleFor`, `TriggerFrequency`, `TriggerCount`, `SplitOptions`, `SendAtLocalTime` |
+
+```json
+{
+  "Name": "spring-sale",
+  "Status": "Draft",
+  "Recipients": { "ListNames": ["Newsletter"] },
+  "Content": [
+    { "From": "sender@yourdomain.com", "Subject": "Spring sale", "TemplateName": "spring-sale-template" }
+  ]
+}
+```
 
 **Response:** `201 Created` — Campaign object
 
@@ -82,6 +106,19 @@ Pauses the specified campaign, cancelling queued emails. Required Access Level: 
 
 **Response:** `200 OK`
 
+### Trigger Automation for Contact
+```
+POST /campaigns/automation/{name}/trigger
+```
+Manually trigger an Automation for a contact. Required Access Level: **ModifyAutomations**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | Yes (path) | Name of the automation |
+| `contactEmail` | string | Yes (query) | Email of the contact to trigger the automation for |
+
+**Response:** `200 OK`
+
 ---
 
 ## Contacts
@@ -107,9 +144,15 @@ Add new contacts (up to 1000 per request; for more, use import). Required Access
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `listnames` | array | No | List names to add contacts to |
+| `listnames` | array | No (query) | List names to add contacts to (repeat the parameter: `?listnames=A&listnames=B`) |
 
-**Request Body:** Array of ContactPayload objects (JSON)
+**Request Body:** Array of ContactPayload objects (JSON) — `Email` (required), `Status`, `FirstName`, `LastName`, `CustomFields` (object; only existing custom fields), `Consent`
+
+`Status` values: `Transactional`, `Engaged`, `Active`, `Bounced`, `Unsubscribed`, `Abuse`, `Inactive`, `Stale`, `NotConfirmed`
+
+```json
+[{ "Email": "john@example.com", "FirstName": "John", "LastName": "Doe", "Status": "Active" }]
+```
 
 **Response:** `200 OK` — Array of Contact objects
 
@@ -135,7 +178,7 @@ Updates a contact. Omitted fields remain unchanged. Required Access Level: **Mod
 |---|---|---|---|
 | `email` | string | Yes (path) | Email address of the contact |
 
-**Request Body:** ContactUpdatePayload (JSON)
+**Request Body:** ContactUpdatePayload (JSON) — `FirstName`, `LastName`, `CustomFields`
 
 **Response:** `200 OK` — Contact object
 
@@ -157,7 +200,7 @@ POST /contacts/delete
 ```
 Deletes contacts in bulk. Required Access Level: **ModifyContacts**
 
-**Request Body:** EmailsPayload — Provide either a rule or a list of emails (not both)
+**Request Body:** EmailsPayload — `{ "Emails": ["a@example.com"] }` or `{ "Rule": "..." }` (provide one, not both)
 
 **Response:** `200 OK`
 
@@ -201,9 +244,9 @@ Upload contacts from a CSV file. Required Access Level: **ModifyContacts**
 | `encodingName` | string | No | File encoding |
 | `fileUrl` | string | No | URL of CSV to import |
 
-**Request Body:** `multipart/form-data` with `file` field (CSV, required column: Email)
+**Request Body:** `multipart/form-data` with `file` field (CSV, required column: Email). Options go in the query string, not the form.
 
-**Response:** `202 Accepted`
+**Response:** `202 Accepted` (import is processed asynchronously)
 
 ---
 
@@ -223,7 +266,7 @@ POST /domains
 ```
 Add a new domain. Required Access Level: **ModifySettings**
 
-**Request Body:** DomainPayload (JSON)
+**Request Body:** DomainPayload (JSON) — `{ "Domain": "yourdomain.com", "SetAsDefault": false }`
 
 **Response:** `201 Created` — DomainDetail object
 
@@ -249,7 +292,7 @@ Updates the specified domain. Required Access Level: **ModifySettings**
 |---|---|---|---|
 | `domain` | string | Yes (path) | Domain name |
 
-**Request Body:** DomainUpdatePayload (JSON)
+**Request Body:** DomainUpdatePayload (JSON) — `CertificateStatus`, `VERP`, `CustomBouncesDomain`, `IsCustomBouncesDomainDefault`
 
 **Response:** `200 OK` — DomainDetail object
 
@@ -287,7 +330,7 @@ Verifies DNS records for the specified domain. Required Access Level: **ModifySe
 |---|---|---|---|
 | `domain` | string | Yes (path) | Domain name |
 
-**Request Body:** Tracking type string (None, Delete, Http, ExternalHttps, InternalCertHttps, LetsEncryptCert)
+**Request Body:** JSON string with the tracking type: `"None"`, `"Delete"`, `"Http"`, `"ExternalHttps"`, `"InternalCertHttps"`, `"LetsEncryptCert"`
 
 **Response:** `200 OK` — DomainData object
 
@@ -313,7 +356,15 @@ POST /emails
 ```
 Send bulk/merge email to multiple recipients. Required Access Level: **SendHttp**
 
-**Request Body:** EmailMessageData (JSON) — includes Recipients, Content, Options
+**Request Body:** EmailMessageData (JSON) — `Recipients`, `Content`, `Options`
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `Recipients` | array | Yes | Flat array of `{ "Email": "...", "Fields": { "firstname": "Ann" } }` — one personalized copy per recipient (up to 1000 per call) |
+| `Content` | object | Yes | EmailContent: `From` (required), `Subject`, `Body` (array of `{ ContentType, Content, Charset }`), `TemplateName`, `Merge`, `Attachments` (`{ BinaryContent, Name, ContentType }`), `AttachFiles`, `Headers`, `ReplyTo`, `EnvelopeFrom`, `Postback`, `Utm` |
+| `Options` | object | No | `TimeOffset` (minutes, max 35 days), `PoolName`, `ChannelName`, `Encoding`, `TrackOpens`, `TrackClicks` |
+
+`Body[].ContentType` values: `HTML`, `PlainText`, `AMP`, `CSS`. Merge placeholders use single braces: `{firstname}`.
 
 **Response:** `200 OK` — EmailSend object (contains TransactionID and MessageID)
 
@@ -357,7 +408,7 @@ POST /emails/mergefile
 ```
 Send to contacts from a CSV file with merge fields. Required Access Level: **SendHttp**
 
-**Request Body:** MergeEmailPayload (JSON)
+**Request Body:** MergeEmailPayload (JSON) — `MergeFile` (required, `{ "BinaryContent": "<base64 CSV>", "Name": "recipients.csv" }`), `Content` (required, EmailContent), `Options`
 
 CSV format: First column must be email, include header row. Merge fields accessible via `{merge}` tags.
 
@@ -369,7 +420,7 @@ POST /emails/transactional
 ```
 Send a transactional email (recipients will be known to each other). Required Access Level: **SendHttp**
 
-**Request Body:** EmailTransactionalMessageData (JSON)
+**Request Body:** EmailTransactionalMessageData (JSON) — `Recipients` (required, `{ "To": [...], "CC": [...], "BCC": [...] }`, `To` required, up to 50 recipients), `Content` (required, EmailContent — same as bulk), `Options`
 
 **Response:** `200 OK` — EmailSend object
 
@@ -385,12 +436,12 @@ Returns delivery event history. Required Access Level: **ViewReports**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `categories` | array | No | Event types to load |
-| `from` | datetime | No | Start date |
-| `to` | datetime | No | End date |
-| `limit` | integer | No | Maximum items |
+| `eventTypes` | array | No | Event types to load: `Submission`, `FailedAttempt`, `Error`, `Sent`, `Open`, `Click`, `Unsubscribe`, `Complaint`, `Bounce`, `TransactionalUnsubscribe`, `Suppress` |
+| `from` | datetime | No | Start date (`YYYY-MM-DDThh:mm:ss`) |
+| `to` | datetime | No | End date (`YYYY-MM-DDThh:mm:ss`) |
+| `orderBy` | string | No | `DateDescending` or `DateAscending` |
+| `limit` | integer | No | Maximum items (max 1000) |
 | `offset` | integer | No | Items to skip |
-| `orderBy` | string | No | Sort order |
 
 **Response:** `200 OK` — Array of RecipientEvent objects
 
@@ -400,13 +451,78 @@ GET /events/{transactionid}
 ```
 Returns events for a specific transaction. Required Access Level: **ViewReports**
 
-Parameters same as Load Events plus:
+Parameters: `from`, `to`, `orderBy`, `limit`, `offset` (same as Load Events, no `eventTypes`) plus:
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `transactionid` | string | Yes (path) | Transaction identifier |
 
 **Response:** `200 OK` — Array of RecipientEvent objects
+
+### Load Channel Events
+```
+GET /events/channels/{name}
+```
+Returns delivery events for a channel. Required Access Level: **ViewReports**
+
+Parameters same as Load Events plus:
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | Yes (path) | Channel name |
+
+**Response:** `200 OK` — Array of RecipientEvent objects
+
+### Export Events
+```
+POST /events/export
+```
+Export the delivery event log to a file. Required Access Level: **Export**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `eventTypes` | array | No | Event types to export (see Load Events) |
+| `from` | datetime | No | Start date |
+| `to` | datetime | No | End date |
+| `fileFormat` | string | No | `Csv`, `Xml`, `Json` |
+| `compressionFormat` | string | No | `None` or `Zip` |
+| `fileName` | string | No | Output filename including extension |
+
+**Response:** `202 Accepted` — ExportLink object (`Link`, `PublicExportID`)
+
+### Check Events Export Status
+```
+GET /events/export/{id}/status
+```
+Check the status of an events export. Required Access Level: **Export**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | string (GUID) | Yes (path) | ID of the export |
+
+**Response:** `200 OK` — ExportStatus (`Error`, `Loading`, `Ready`, `Expired`)
+
+### Export Channel Events
+```
+POST /events/channels/{name}/export
+```
+Export a channel's delivery events to a file. Required Access Level: **Export**
+
+Parameters same as Export Events plus `name` (path, channel name).
+
+**Response:** `202 Accepted` — ExportLink object
+
+### Check Channel Export Status
+```
+GET /events/channels/export/{id}/status
+```
+Check the status of a channel events export. Required Access Level: **Export**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `id` | string (GUID) | Yes (path) | ID of the export |
+
+**Response:** `200 OK` — ExportStatus
 
 ---
 
@@ -431,23 +547,23 @@ POST /files
 ```
 Upload a file to your account. Required Access Level: **ModifyFiles**
 
-**Request Body:** `multipart/form-data` with `file` field
+**Request Body:** FilePayload (JSON) — `{ "BinaryContent": "<base64>", "Name": "invoice.pdf", "ContentType": "application/pdf" }` (`BinaryContent` required). Uploaded files can be attached to emails by name via `Content.AttachFiles`.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `expiresAfterDays` | integer | No | Auto-delete after N days |
+| `expiresAfterDays` | integer | No (query) | Auto-delete after N days |
 
 **Response:** `201 Created` — FileInfo object
 
 ### Load File Details
 ```
-GET /files/{name}
+GET /files/{name}/info
 ```
 Returns file details. Required Access Level: **ViewFiles**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | Yes (path) | File name |
+| `name` | string | Yes (path) | File name including extension |
 
 **Response:** `200 OK` — FileInfo object
 
@@ -465,7 +581,7 @@ Deletes the specified file. Required Access Level: **ModifyFiles**
 
 ### Download File
 ```
-GET /files/{name}/download
+GET /files/{name}
 ```
 Downloads the file content. Required Access Level: **ViewFiles**
 
@@ -485,7 +601,7 @@ GET /inboundroute
 ```
 Returns all inbound routes. Required Access Level: **ViewSettings**
 
-**Response:** `200 OK` — Array of InboundPayload objects
+**Response:** `200 OK` — Array of InboundRoute objects
 
 ### Create Inbound Route
 ```
@@ -495,7 +611,16 @@ Create a new inbound route. Required Access Level: **ModifySettings**
 
 **Request Body:** InboundPayload (JSON)
 
-**Response:** `200 OK` — InboundPayload object
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `Name` | string | Yes | Route name |
+| `Filter` | string | Yes | Value to match (email address or subject) |
+| `FilterType` | string | Yes | `EmailAddress` or `Subject` |
+| `ActionType` | string | Yes | `ForwardToEmail`, `NotifyViaHttp`, or `Stop` |
+| `EmailAddress` | string | No | Forward target (for `ForwardToEmail`) |
+| `HttpAddress` | string | No | URL to notify (for `NotifyViaHttp`) |
+
+**Response:** `200 OK` — InboundRoute object
 
 ### Get Inbound Route
 ```
@@ -505,9 +630,9 @@ Load a specific inbound route. Required Access Level: **ViewSettings**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `id` | string | Yes (path) | Route ID |
+| `id` | string (GUID) | Yes (path) | Route ID |
 
-**Response:** `200 OK` — InboundPayload object
+**Response:** `200 OK` — InboundRoute object
 
 ### Update Inbound Route
 ```
@@ -517,11 +642,11 @@ Update an inbound route. Required Access Level: **ModifySettings**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `id` | string | Yes (path) | Route ID |
+| `id` | string (GUID) | Yes (path) | Route ID |
 
 **Request Body:** InboundPayload (JSON)
 
-**Response:** `200 OK` — InboundPayload object
+**Response:** `200 OK` — InboundRoute object
 
 ### Delete Inbound Route
 ```
@@ -531,9 +656,19 @@ Deletes an inbound route. Required Access Level: **ModifySettings**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `id` | string | Yes (path) | Route ID |
+| `id` | string (GUID) | Yes (path) | Route ID |
 
 **Response:** `200 OK`
+
+### Update Inbound Route Sorting
+```
+PUT /inboundroute/order
+```
+Change the order in which inbound routes are evaluated. Required Access Level: **ViewSettings** (as stated in the OpenAPI spec)
+
+**Request Body:** Array of `{ "PublicInboundId": "<route id>", "SortOrder": 1 }` (`1` = evaluated first)
+
+**Response:** `200 OK` — Array of InboundRoute objects
 
 ---
 
@@ -584,7 +719,7 @@ Update an existing list. Required Access Level: **ModifyContacts**
 |---|---|---|---|
 | `name` | string | Yes (path) | List name |
 
-**Request Body:** ListUpdatePayload (JSON)
+**Request Body:** ListUpdatePayload (JSON) — `NewListName`, `AllowUnsubscribe`
 
 **Response:** `200 OK` — ContactsList object
 
@@ -592,7 +727,7 @@ Update an existing list. Required Access Level: **ModifyContacts**
 ```
 DELETE /lists/{name}
 ```
-Deletes the specified list. Required Access Level: **ModifyContacts**
+Deletes the list and removes all contacts from it (the contacts themselves are not deleted). Required Access Level: **ModifyContacts**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -602,13 +737,13 @@ Deletes the specified list. Required Access Level: **ModifyContacts**
 
 ### Load Contacts In List
 ```
-GET /lists/{name}/contacts
+GET /lists/{listname}/contacts
 ```
 Returns contacts in a list. Required Access Level: **ViewContacts**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | Yes (path) | List name |
+| `listname` | string | Yes (path) | List name |
 | `limit` | integer | No | Maximum items |
 | `offset` | integer | No | Items to skip |
 
@@ -624,21 +759,21 @@ Add existing contacts to a list. Required Access Level: **ModifyContacts**
 |---|---|---|---|
 | `name` | string | Yes (path) | List name |
 
-**Request Body:** EmailsPayload (JSON)
+**Request Body:** EmailsPayload (JSON) — `{ "Emails": ["john@example.com"] }` or `{ "Rule": "..." }` (contacts must already exist)
 
 **Response:** `200 OK` — ContactsList object
 
 ### Remove Contacts from List
 ```
-DELETE /lists/{name}/contacts
+POST /lists/{name}/contacts/remove
 ```
-Remove contacts from a list. Required Access Level: **ModifyContacts**
+Remove contacts from a list (contacts are not deleted). Required Access Level: **ModifyContacts**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `name` | string | Yes (path) | List name |
 
-**Request Body:** EmailsPayload (JSON)
+**Request Body:** EmailsPayload (JSON) — `{ "Emails": [...] }` or `{ "Rule": "..." }`
 
 **Response:** `200 OK`
 
@@ -650,7 +785,11 @@ Remove contacts from a list. Required Access Level: **ModifyContacts**
 ```
 GET /security/apikeys
 ```
-Returns all API keys. Required Access Level: **Security**
+Returns all API keys. Required Access Level: **ViewAccessTokens**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `subaccount` | string | No (query) | Email of a sub-account whose API keys to list |
 
 **Response:** `200 OK` — Array of ApiKey objects
 
@@ -658,9 +797,9 @@ Returns all API keys. Required Access Level: **Security**
 ```
 POST /security/apikeys
 ```
-Creates a new API key. Required Access Level: **Security**
+Creates a new API key. Required Access Level: **ModifyAccessTokens**
 
-**Request Body:** ApiKeyPayload (JSON)
+**Request Body:** ApiKeyPayload (JSON) — `Name` (required), `AccessLevel` (required, array such as `["SendHttp", "ViewReports"]`), `Expires`, `RestrictAccessToIPRange`, `Subaccount` (email; creates the key for a sub-account)
 
 **Response:** `201 Created` — NewApiKey object
 
@@ -668,11 +807,12 @@ Creates a new API key. Required Access Level: **Security**
 ```
 GET /security/apikeys/{name}
 ```
-Returns a specific API key. Required Access Level: **Security**
+Returns a specific API key. Required Access Level: **ViewAccessTokens**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `name` | string | Yes (path) | Key name |
+| `subaccount` | string | No (query) | Email of the sub-account that owns it |
 
 **Response:** `200 OK` — ApiKey object
 
@@ -680,7 +820,7 @@ Returns a specific API key. Required Access Level: **Security**
 ```
 PUT /security/apikeys/{name}
 ```
-Update an API key. Required Access Level: **Security**
+Update an API key. Required Access Level: **ModifyAccessTokens**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -694,11 +834,12 @@ Update an API key. Required Access Level: **Security**
 ```
 DELETE /security/apikeys/{name}
 ```
-Deletes an API key. Required Access Level: **Security**
+Deletes an API key. Required Access Level: **ModifyAccessTokens**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `name` | string | Yes (path) | Key name |
+| `subaccount` | string | No (query) | Email of the sub-account that owns it |
 
 **Response:** `200 OK`
 
@@ -706,7 +847,11 @@ Deletes an API key. Required Access Level: **Security**
 ```
 GET /security/smtp
 ```
-Returns all SMTP credentials. Required Access Level: **Security**
+Returns all SMTP credentials. Required Access Level: **ViewAccessTokens**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `subaccount` | string | No (query) | Email of a sub-account whose credentials to list |
 
 **Response:** `200 OK` — Array of SmtpCredentials objects
 
@@ -714,9 +859,9 @@ Returns all SMTP credentials. Required Access Level: **Security**
 ```
 POST /security/smtp
 ```
-Creates new SMTP credentials. Required Access Level: **Security**
+Creates new SMTP credentials. Required Access Level: **ModifyAccessTokens**
 
-**Request Body:** SmtpCredentialsPayload (JSON)
+**Request Body:** SmtpCredentialsPayload (JSON) — `Name` (required, must be a valid email address; used as the SMTP username), `Expires`, `RestrictAccessToIPRange`, `Subaccount`
 
 **Response:** `201 Created` — NewSmtpCredentials object
 
@@ -724,11 +869,12 @@ Creates new SMTP credentials. Required Access Level: **Security**
 ```
 GET /security/smtp/{name}
 ```
-Returns a specific SMTP credential. Required Access Level: **Security**
+Returns a specific SMTP credential. Required Access Level: **ViewAccessTokens**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `name` | string | Yes (path) | Credential name |
+| `subaccount` | string | No (query) | Email of the sub-account that owns it |
 
 **Response:** `200 OK` — SmtpCredentials object
 
@@ -736,7 +882,7 @@ Returns a specific SMTP credential. Required Access Level: **Security**
 ```
 PUT /security/smtp/{name}
 ```
-Update SMTP credentials. Required Access Level: **Security**
+Update SMTP credentials. Required Access Level: **ModifyAccessTokens**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -750,11 +896,12 @@ Update SMTP credentials. Required Access Level: **Security**
 ```
 DELETE /security/smtp/{name}
 ```
-Deletes SMTP credentials. Required Access Level: **Security**
+Deletes SMTP credentials. Required Access Level: **ModifyAccessTokens**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `name` | string | Yes (path) | Credential name |
+| `subaccount` | string | No (query) | Email of the sub-account that owns it |
 
 **Response:** `200 OK`
 
