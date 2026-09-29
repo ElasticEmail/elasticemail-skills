@@ -89,6 +89,9 @@ Zip the `skills/elastic-email-api` folder and upload it in **Settings → Capabi
 
 ## Quick start
 
+> [!IMPORTANT]
+> Elastic Email only sends from verified domains. Before your first send, [verify your sending domain](https://help.elasticemail.com/en/articles/4934400-how-to-verify-your-domain) and use an address on that domain as the sender.
+
 Once the skill is installed, ask your assistant in plain language. It loads the skill automatically when a request mentions Elastic Email:
 
 ```text
