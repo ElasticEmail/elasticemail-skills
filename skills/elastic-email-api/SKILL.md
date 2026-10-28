@@ -54,7 +54,7 @@ x-elasticemail-apikey: YOUR_API_KEY
 
 Generate your API key at: https://app.elasticemail.com/marketing/settings/new/manage-api
 
-> **Important:** The API has a limit of 20 concurrent connections and a hard timeout of 600 seconds per request. Maximum email size (message + attachments) is 20MB.
+> **Important:** The API has a limit of 20 concurrent connections, and requests that get no response for about 50 seconds fail with a gateway error (5xx). Maximum email size (message + attachments) is 20MB.
 
 ## OpenAPI Specification
 
@@ -394,7 +394,7 @@ All API responses follow standard HTTP status codes:
 | `403` | Forbidden — insufficient access level |
 | `404` | Not found |
 | `409` | Conflict |
-| `429` | Rate limited — too many requests |
+| `413` | Too many items — more than 50 transactional recipients, or more than 1000 contacts or suppressions |
 | `500` | Server error |
 
 ### Required Access Levels
@@ -421,9 +421,9 @@ Different API endpoints require different access levels on your API key:
 **Solution:** Verify your API key in the `x-elasticemail-apikey` header. Generate a new key at https://app.elasticemail.com/marketing/settings/new/manage-api or https://app.elasticemail.com/api/settings/new/manage-api
 
 ### Rate Limiting
-**Error:** `429 Too Many Requests`
-**Cause:** Exceeded 20 concurrent connections
-**Solution:** Implement request queuing or exponential backoff. The API allows 20 concurrent connections.
+**Error:** `5xx` gateway errors under load (the v4 API doesn't return `429`)
+**Cause:** More than 20 concurrent connections, or a request running longer than about 50 seconds
+**Solution:** Queue requests, keep concurrency below 20, and retry with exponential backoff and jitter. Use bulk `POST /emails` instead of many transactional calls.
 
 ### Domain Not Verified
 **Error:** Emails fail to send or get rejected
@@ -432,7 +432,7 @@ Different API endpoints require different access levels on your API key:
 
 ### Timeout Errors
 **Error:** Request timeout
-**Cause:** Request exceeded 600-second limit
+**Cause:** No response within about 50 seconds (gateway `5xx`)
 **Solution:** Break large operations (e.g., bulk imports) into smaller batches.
 
 ### Email Size Exceeded

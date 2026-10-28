@@ -235,16 +235,17 @@ The API key used for MCP requires the following permissions (view and modify): A
 | Constraint | Value |
 |---|---|
 | **Concurrent connections** | 20 maximum |
-| **Request timeout** | 600 seconds |
+| **Request timeout** | About 50 seconds (gateway `5xx` after that) |
 | **Max email size** | 20 MB (message + attachments) |
 | **Max contacts per POST** | 1,000 (use import for more) |
 | **Max recipients per campaign** | Depends on pricing plan (no hard limit) |
 
 ### Rate Limit Handling
 
-When you exceed the concurrent connection limit, the API returns `429 Too Many Requests`. Implement exponential backoff:
+The v4 API doesn't return `429`. Under load, or above 20 concurrent connections, you get a `5xx`. Retry `5xx` with exponential backoff and jitter; 4xx codes describe the request and won't succeed on retry:
 
 ```python
+import random
 import time
 import ElasticEmail
 
@@ -253,8 +254,8 @@ def api_call_with_retry(func, max_retries=5):
         try:
             return func()
         except ElasticEmail.ApiException as e:
-            if e.status == 429:
-                wait = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+            if e.status >= 500:
+                wait = 2 ** attempt + random.random()  # 1, 2, 4, 8, 16 seconds plus jitter
                 time.sleep(wait)
             else:
                 raise
